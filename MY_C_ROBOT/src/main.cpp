@@ -15,26 +15,41 @@ void setup() {
 
 }
 
+void handle_servo();
+
 void loop() {
 
-  /******************************************************
-   * This if statement is meant to help with non blocking code. There is a 16 bit variable that counds down and once it reaches one it will either
-   * increment or decrement the servo angle value. It makes it so the other operations in the main function can continue without any polling.
-  *******************************************************/
+    /*****************************
+     * Put code in the if statement below that needs to happen in sync with the servo motor movements.
+    *****************************/
 
     if(count_down == 1){     //When the countdown reaches the bottom
 
-      count_down = 0x2fff;    //reset the countdown
+    count_down = 0x2fff;    //reset the countdown
 
-      if(up)                  //reading a flag whether we are going up in angle values or down
-      {
+    handle_servo();
+
+    }
+
+    count_down--;   //Decrementing the countdown
+
+}
+
+/******************************************************
+  * This function is meant to help with non blocking code. There is a 16 bit variable that counds down and once it reaches one it will call
+  * this function and either increment or decrement the servo angle value. It makes it 
+  * so the other operations in the main function can continue without any polling.
+*******************************************************/
+
+void handle_servo(){
+
+    if(up)                  //reading a flag whether we are going up in angle values or down
+    {
       sweeper_servo.write(servo_val++);   //Increment the angle if we are going up in angle values currently
-      }
-      else
-      {
+    }
+    else
+    {
       sweeper_servo.write(servo_val--);   //decrement the angle if we are currently going downwards in angle values
-      }
-
     }
 
     if(servo_val == 180)    // checking to see if the we need to reverse the direction on increasing/decreasing angle values
@@ -46,6 +61,5 @@ void loop() {
     up = 1;       //Changing the state of the increment/decrement
     }
 
-    count_down--;   //Decrementing the countdown
-
+  return;
 }
