@@ -1,13 +1,11 @@
 #include <Arduino.h>
 #include<Servo.h>
 
-#define TRIG 8
 #define ECHO 9
 
 Servo sweeper_servo;
 uint16_t count_down = 0x2fff;     //The countdown value
 uint8_t servo_val = 0;      //The angle values (0-180)
-uint8_t direction_curr;
 bool up = 1;          //Boolean to represent the states of incrementing angle values or decrementing angle values
 uint16_t distance_arr[180];
 
@@ -17,8 +15,8 @@ void setup() {
 
   sweeper_servo.attach(6);      //Attatching the sweeper_servo object to the 6 pin (PWM enabled)
 
-  pinMode(TRIG, OUTPUT);
-  pinMode(ECHO, INPUT);
+  DDRB |= 0b00000001;       //Setting the directions of the echo and trigger GPIO pins
+  DDRB &= 0b11111101;
 
 
 }
@@ -49,6 +47,8 @@ void loop() {
 }
 
 /******************************************************
+ * Name: handle_servo() 
+ * 
   * Description:
   * This function is meant to help with non blocking code. There is a 16 bit variable that counds down and once it reaches one it will call
   * this function and either increment or decrement the servo angle value. It makes it 
@@ -78,23 +78,33 @@ void handle_servo(){
   return;
 }
 
+/***************************************************************
+ * Name: ping_distance()
+ * 
+ * Description:
+ * This is a function that takes advantage of the HC-SRO4 ultrasound sensor and gathers the distance to an
+ * object in front of the sensor.
+ * 
+ * Return: It returns an unsigned 16 bit variable holding the distance in centimeters
+*/
+
 uint16_t ping_distance(){
 
-  long time;
-  uint16_t cm;
+  long time;      //This holds the value of the time it takes to heart the pulse back
+  uint16_t cm;    //This holds our centimeter value to be returned
 
-  digitalWrite(TRIG, LOW);
+  PORTB &= 0b11111110;      //This is setting our pin 8 low
   delayMicroseconds(2);
 
-  digitalWrite(TRIG, HIGH);
+  PORTB |= 0b00000001;      //This is setting our pin 8 high
   delayMicroseconds(10);
-  digitalWrite(TRIG, LOW);
+  PORTB &= 0b11111110;      //This is setting our pin 8 low
 
-  time = pulseIn(ECHO, HIGH);
+  time = pulseIn(ECHO, HIGH);     
 
-  cm = time * .034 / 2;
+  cm = time * .034 / 2;   //Converting from our time of flight to centimeters to target
 
-  Serial.println(cm);
+  Serial.println(cm);     //Just for debugging purposes
   
   return cm;
 
