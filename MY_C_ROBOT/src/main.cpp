@@ -1,11 +1,11 @@
 #include <Arduino.h>
 #include<Servo.h>
 
-#include "arduino_uno.h"
+#include "arduino_uno.h"      //Including our board specific header file
 
 Servo sweeper_servo;
-uint16_t count_down = 0x2fff;     //The countdown value
-uint8_t servo_val = 0;      //The angle values (0-180)
+uint16_t count_down = 0x2fff;     //The countdown value     Modifying this will make the servo/ultrasound move faster
+uint8_t servo_val = 0;      //The angle values (0-180)     You need to zero your servo all the way to the left before starting code
 bool up = 1;          //Boolean to represent the states of incrementing angle values or decrementing angle values
 uint16_t distance_arr[180];
 
@@ -13,7 +13,7 @@ void setup() {
   
   Serial.begin(9600);     //Beginning serial transmission
 
-  sweeper_servo.attach(6);      //Attatching the sweeper_servo object to the 6 pin (PWM enabled)
+  sweeper_servo.attach(SERVO_SWEEPER_PIN);      //Attatching the sweeper_servo object to the 6 pin (PWM enabled)
 
   DDRB |= FIRST_BIT;       //Setting the directions of the echo and trigger GPIO pins
   DDRB &= ~SECOND_BIT;
@@ -25,24 +25,13 @@ void handle_servo();
 uint16_t ping_distance();
 void move(char direction_delta);
 void sample_for_180_deg();
+uint8_t directional_change();
 
 void loop() {
 
-    /*****************************
-     * Put code in the if statement below that needs to happen in sync with the servo motor movements.
-    *****************************/
+    sample_for_180_deg();
 
-    if(count_down == 1){     //When the countdown reaches the bottom
-
-    count_down = 0x2fff;    //reset the countdown
-
-    handle_servo();
-
-    distance_arr[servo_val] = ping_distance();   //calling the ping distance function everytime the servo increments/decrements its angle by one
-
-    }
-
-    count_down--;   //Decrementing the countdown
+    //Serial.println("BLIP");    //For debugging purposes
 
 }
 
@@ -118,7 +107,7 @@ uint16_t ping_distance(){
 ****************************************************************/
 
 void move(char direction_delta){
-
+    //implement still
 }
 
 /***************************************************************
@@ -129,5 +118,84 @@ void move(char direction_delta){
 ****************************************************************/
 
 void sample_for_180_deg(){
+
+      /*****************************
+     * Put code in the if statement below that needs to happen in sync with the servo motor movements.
+    *****************************/
+
+   for(uint8_t i = 0; i < 360; i++){
+
+    if(count_down == 1){     //When the countdown reaches the bottom
+
+    count_down = 0x2fff;    //reset the countdown
+    
+    handle_servo();
+
+    distance_arr[servo_val] = ping_distance();   //calling the ping distance function everytime the servo increments/decrements its angle by one
+
+    }
+
+    count_down--;   //Decrementing the countdown
+
+    }
+
+    return;
+
+}
+
+/*********************************************************************
+ * Function name: directional_change()
+ * 
+ * Description:
+ * This is a function that will calculate the best direction to move. It uses an algorithm that will
+ * determine which direction has the widest path of distance over 100. It will then pick the center of this
+ * widest path and return that.
+ * 
+ * Return: an eight bit unsigned int of the best direction to turn. If there is no direction over 100
+ * it will return 240 (not a valid direction)
+**********************************************************************/
+
+uint8_t directional_change(){
+
+  uint8_t best_dir_arr[180][2] = {0};    //An array that holds the value of contiguous points in the directional field and each relating center direction
+  uint8_t num_directions = 0;       //Holds the value of contiguous directions found
+  uint8_t pos = 0;    //pos holds the index for the first dimension of the best_dir_arr
+  uint8_t best_number = 0;
+  uint8_t best_index = 240;
+
+  for(uint8_t i = 0; i<180; i++){     //This loop will iterate no more that 180 times
+
+    num_directions = 0;
+
+    if(distance_arr[i]>=100){   //Minimum distance is in this conditional
+
+        num_directions++;
+
+        while(distance_arr[i++] > 100){
+          num_directions ++;                  //This loops through finding the number of contiguous spaces over distance 100 after we find the first one
+        }
+
+        best_dir_arr[pos][0] = num_directions;            //Storing the number of contiguous spaces
+        best_dir_arr[pos][1] = i+(num_directions/2);     //calculating the center index of the block of contiguous directions over 100
+
+        pos++;
+
+    }
+
+  }
+
+  pos = 0;        //Reseting this index variable back to zero for the next loop iteration
+
+  while(best_dir_arr[pos][0]>0)     //This loop will now go through the array of contiguous directions and find the highest number
+  {
+    
+    if(best_dir_arr[pos][0]>best_number){     //This if statement finds the highest number of contiguous spaces so far
+      best_index = best_dir_arr[pos][1];      //This keeps track of that best direction
+    }
+
+    pos++;
+  }
+
+  return best_index;      //This returns the best direction to move
 
 }
