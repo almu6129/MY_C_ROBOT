@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include<Servo.h>
 
-#define ECHO 9
+#include "arduino_uno.h"
 
 Servo sweeper_servo;
 uint16_t count_down = 0x2fff;     //The countdown value
@@ -15,8 +15,8 @@ void setup() {
 
   sweeper_servo.attach(6);      //Attatching the sweeper_servo object to the 6 pin (PWM enabled)
 
-  DDRB |= 0b00000001;       //Setting the directions of the echo and trigger GPIO pins
-  DDRB &= 0b11111101;
+  DDRB |= FIRST_BIT;       //Setting the directions of the echo and trigger GPIO pins
+  DDRB &= ~SECOND_BIT;
 
 
 }
@@ -93,14 +93,14 @@ uint16_t ping_distance(){
   long time;      //This holds the value of the time it takes to heart the pulse back
   uint16_t cm;    //This holds our centimeter value to be returned
 
-  PORTB &= 0b11111110;      //This is setting our pin 8 low
+  PORTB &= ~FIRST_BIT;      //This is setting our pin 8 low
   delayMicroseconds(2);
 
-  PORTB |= 0b00000001;      //This is setting our pin 8 high
+  PORTB |= FIRST_BIT;      //This is setting our pin 8 high
   delayMicroseconds(10);
-  PORTB &= 0b11111110;      //This is setting our pin 8 low
+  PORTB &= ~FIRST_BIT;      //This is setting our pin 8 low
 
-  time = pulseIn(ECHO, HIGH);     
+  time = pulseIn(ECHO_PIN, HIGH);     
 
   cm = time * .034 / 2;   //Converting from our time of flight to centimeters to target
 
